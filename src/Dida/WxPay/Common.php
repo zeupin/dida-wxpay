@@ -29,43 +29,76 @@ class Common
 
     public static function sign(array $data, $sign_key)
     {
+        ksort($data);
+
+        unset($data["sign"]);
+
         $temp = [];
 
         foreach ($data as $k => $v) {
             if ($v) {
-                $temp[$k] = $v;
+                $temp[] = "$k=$v";
             }
         }
 
-        unset($temp["sign"]);
+        $temp[] = "key={$sign_key}";
 
-        ksort($temp);
-
-        $temp["key"] = $sign_key;
-
-        $raw = http_build_query($temp);
-
-        var_dump($raw);
+        $raw = implode('&', $temp);
+        \Dida\Log\Log::write($raw);
 
         $hash = md5($raw);
 
         $hash = strtoupper($hash);
+        \Dida\Log\Log::write($hash);
 
         return $hash;
     }
 
 
-    public static function toXml(array $data)
+    public static function verify(array $msg, $key)
+    {
+        if (!isset($msg['sign'])) {
+            return false;
+        }
+
+        $sign = $msg["sign"];
+
+        $check = self::sign($msg, $key);
+
+        \Dida\Log\Log::write("$sign == $check ?");
+
+        return ($sign === $check);
+    }
+
+
+    public static function arrayToXml(array $array)
     {
         $output = [];
 
         $output[] = "<xml>";
-        foreach ($data as $name => $value) {
-            $output[] = "<$name>" . urlencode($value) . "</$name>";
+        foreach ($array as $name => $value) {
+            $output[] = "<{$name}><![CDATA[{$value}]]></{$name}>";
         }
         $output[] = "</xml>";
 
         return implode('', $output);
+    }
+
+
+    public static function xmlToArray($xml)
+    {
+        $temp = simplexml_load_string($xml, 'SimpleXMLElement');
+
+        if ($temp === false) {
+            return false;
+        }
+
+        $output = [];
+        foreach ($temp as $key => $value) {
+            $output[$key] = "$value";
+        }
+
+        return $output;
     }
 
 

@@ -69,11 +69,48 @@ class UnifiedOrder
 
         $temp["sign_type"] = "MD5";
 
+        ksort($temp);
         $temp["sign"] = Common::sign($temp, $data['sign_key']);
 
-        $xml = Common::toXml($temp);
+        $xml = Common::arrayToXml($temp);
+        \Dida\Log\Log::write("request=$xml");
 
-        var_dump($xml);
+        $curl = new \Dida\CURL\CURL();
+        $result = $curl->request([
+            'url'    => self::APIURL,
+            'method' => 'POST',
+            'data'   => $xml,
+        ]);
+        \Dida\Log\Log::write($result);
+
+        list($code, $msg, $xml) = $result;
+
+        if ($code !== 0) {
+            return [$code, $msg, null];
+        }
+
+        $rcv = Common::xmlToArray($xml);
+        $verify = Common::verify($rcv, $data['sign_key']);
+        if ($verify === false) {
+            return [1, "应答的签名校验失败", null];
+        }
+
+        $appId = $data['appid'];
+        $timeStamp = time();
+        $nonceStr = Common::randomString(10);
+        $package = "prepay_id={$rcv["prepay_id"]}";
+        $pay = [
+            'appId'     => $appId,
+            'timeStamp' => "$timeStamp",
+            'nonceStr'  => $nonceStr,
+            'package'   => $package,
+            'signType'  => 'MD5',
+        ];
+        ksort($pay);
+        $paySign = Common::sign($pay, $data['sign_key']);
+        $pay['paySign'] = $paySign;
+
+        return [0, null, $pay];
     }
 
 

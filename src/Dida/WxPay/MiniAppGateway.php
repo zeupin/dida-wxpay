@@ -9,8 +9,9 @@
 
 namespace Dida\WxPay;
 
-class MiniAppGateway extends Gateway
+class MiniAppGateway
 {
+    protected $conf = [];
 
 
     public function config(array $conf)
@@ -37,5 +38,27 @@ class MiniAppGateway extends Gateway
         $result = $uniorder->apply($temp);
 
         return $result;
+    }
+
+
+    public function receivedNotify($xml, $mch_key)
+    {
+        $msg = Common::xmlToArray($xml);
+
+        if ($msg === false) {
+            \Dida\Log\Log::write("无效的微信支付通知xml");
+            \Dida\Log\Log::write($xml);
+            return [1, "支付通知不是一个有效的xml", null];
+        }
+
+        $result = Common::verify($msg, $mch_key);
+
+
+
+        if ($result) {
+            return [0, null, $msg];
+        } else {
+            return [1, "验证支付结果通知的签名失败，此消息不被信任", $msg];
+        }
     }
 }
