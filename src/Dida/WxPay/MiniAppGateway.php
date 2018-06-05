@@ -61,4 +61,26 @@ class MiniAppGateway
             return [1, "验证支付结果通知的签名失败，此消息不被信任", $msg];
         }
     }
+
+
+    public function notifyOK()
+    {
+        return <<<TEXT
+<xml>
+  <return_code><![CDATA[SUCCESS]]></return_code>
+  <return_msg><![CDATA[OK]]></return_msg>
+</xml>
+TEXT;
+    }
+
+
+    public function notifyFail($errinfo)
+    {
+        $response = [
+            "return_code" => "FAIL",
+            "return_msg"  => $errinfo
+        ];
+
+        return Common::arrayToXml($response);
+    }
 }
