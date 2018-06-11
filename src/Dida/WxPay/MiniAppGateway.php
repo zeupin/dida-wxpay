@@ -20,7 +20,7 @@ class MiniAppGateway
     }
 
 
-    public function apply(array $data)
+    public function prepay(array $data)
     {
         $preset = [
             "trade_type" => "JSAPI",
@@ -35,13 +35,13 @@ class MiniAppGateway
 
         $uniorder = new UnifiedOrder;
 
-        $result = $uniorder->apply($temp);
+        $result = $uniorder->prepay($temp);
 
         return $result;
     }
 
 
-    public function receivedNotify($xml, $mch_key)
+    public function parseNotify($xml, $mch_key)
     {
         $msg = Common::xmlToArray($xml);
 

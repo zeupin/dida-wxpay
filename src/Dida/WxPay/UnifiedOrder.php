@@ -44,7 +44,7 @@ class UnifiedOrder
     ];
 
 
-    public function apply(array $data)
+    public function prepay(array $data)
     {
         $temp = [];
 
