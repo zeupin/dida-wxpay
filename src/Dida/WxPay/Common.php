@@ -13,6 +13,12 @@ class Common
 {
 
 
+    public function __construct()
+    {
+        libxml_disable_entity_loader(true);
+    }
+
+
     public static function randomString($num = 32, $set = null)
     {
         if (!$set) {
@@ -44,12 +50,10 @@ class Common
         $temp[] = "key={$sign_key}";
 
         $raw = implode('&', $temp);
-        \Dida\Log\Log::write($raw);
 
         $hash = md5($raw);
 
         $hash = strtoupper($hash);
-        \Dida\Log\Log::write($hash);
 
         return $hash;
     }
@@ -64,8 +68,6 @@ class Common
         $sign = $msg["sign"];
 
         $check = self::sign($msg, $key);
-
-        \Dida\Log\Log::write("$sign == $check ?");
 
         return ($sign === $check);
     }
@@ -125,5 +127,19 @@ class Common
     public static function field_exists($field, array $data)
     {
         return (isset($data[$field]) && $data[$field]);
+    }
+
+
+    public static function filterFields(array $field_list, array $input)
+    {
+        $output = [];
+
+        foreach ($input as $name => $v) {
+            if (array_key_exists($name, $field_list)) {
+                $output[$name] = $v;
+            }
+        }
+
+        return $output;
     }
 }

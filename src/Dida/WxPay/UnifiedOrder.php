@@ -11,18 +11,18 @@ namespace Dida\WxPay;
 
 class UnifiedOrder
 {
-    const VERSION = '20180505';
+    const VERSION = '20180612';
 
     const APIURL = "https://api.mch.weixin.qq.com/pay/unifiedorder";
 
-    static $fieldset = [
-        'appid'        => '',
-        'mch_id'       => '',
-        'trade_type'   => '',
-        'out_trade_no' => '',
-        'total_fee'    => '',
-        'body'         => '',
-        'notify_url'   => '',
+    static $valid_fields = [
+        'appid'        => 'required',
+        'mch_id'       => 'required',
+        'trade_type'   => 'required',
+        'out_trade_no' => 'required',
+        'total_fee'    => 'required',
+        'body'         => 'required',
+        'notify_url'   => 'required',
 
         'nonce_str'        => 'auto',
         'spbill_create_ip' => 'auto',
@@ -49,7 +49,7 @@ class UnifiedOrder
         $temp = [];
 
         foreach ($data as $key => $value) {
-            if (array_key_exists($key, self::$fieldset)) {
+            if (array_key_exists($key, self::$valid_fields)) {
                 $temp[$key] = $value;
             }
         }
@@ -61,7 +61,7 @@ class UnifiedOrder
             $temp['nonce_str'] = Common::randomString(10);
         }
 
-        list($code, $msg) = $this->check($temp);
+        list($code, $msg) = $this->checkFields($temp);
 
         if ($code !== 0) {
             return [1, $msg, null];
@@ -95,6 +95,10 @@ class UnifiedOrder
             return [1, "应答的签名校验失败", null];
         }
 
+        if ($rcv["result_code"] == "FAIL") {
+            return [$rcv["err_code"], $rcv["err_code_des"], null];
+        }
+
         $appId = $data['appid'];
         $timeStamp = time();
         $nonceStr = Common::randomString(10);
@@ -114,29 +118,29 @@ class UnifiedOrder
     }
 
 
-    protected function check(array $data)
+    protected function checkFields(array $data)
     {
-        foreach (self::$fieldset as $name => $flag) {
+        foreach (self::$valid_fields as $name => $flag) {
             switch ($flag) {
-                case '':
+                case 'required':
                 case 'auto':
                     if (!Common::field_exists($name, $data)) {
-                        return [1, "缺少必填参数 {$name}"];
+                        return [1, "必填参数 {$name} 未设置", null];
                     }
             }
         }
 
         if ($data["trade_type"] === "JSAPI") {
             if (!Common::field_exists('openid', $data)) {
-                return [2, "JSAPI类型交易必填 openid"];
+                return [2, "JSAPI类型交易必填 openid", null];
             }
         }
         if ($data['trade_type'] === 'NATIVE') {
             if (!Common::field_exists('product_id', $data)) {
-                return [2, "微信扫码支付必填 product_id"];
+                return [2, "微信扫码支付必填 product_id", null];
             }
         }
 
-        return [0, null];
+        return [0, null, null];
     }
 }
